@@ -33,7 +33,8 @@ import {
   Wifi,
   WifiOff
 } from 'lucide-react';
-import { floodAreas } from '../data/dummyData';
+import { floodAreas, iotDevices } from '../data/dummyData';
+import LiveMap from '../components/LiveMap';
 
 // Interactive Map Component
 const InteractiveMap = ({ areas }) => {
@@ -420,6 +421,7 @@ const FloodAreaManagement = ({ user }) => {
   const [showTransportModal, setShowTransportModal] = useState(false);
   const [showMapModal, setShowMapModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [selectedAreaForLiveMap, setSelectedAreaForLiveMap] = useState(null);
   const [selectedArea, setSelectedArea] = useState(null);
   const [expandedAreaId, setExpandedAreaId] = useState(null);
   const [selectedAreas, setSelectedAreas] = useState([]);
@@ -1459,6 +1461,16 @@ const FloodAreaManagement = ({ user }) => {
                         <Droplet className="h-5 w-5" />
                       </button>
                       <button
+                        onClick={() => {
+                          setSelectedAreaForLiveMap(area.id);
+                        }}
+                        className="p-1 rounded-full hover:bg-gray-100 text-purple-600"
+                        aria-label="Live map view"
+                        title="Live Map View"
+                      >
+                        <Navigation className="h-5 w-5" />
+                      </button>
+                      <button
                         onClick={() => handleEditClick(area)}
                         className="p-1 rounded-full hover:bg-gray-100 text-blue-600"
                         aria-label="Edit area"
@@ -2375,6 +2387,33 @@ const FloodAreaManagement = ({ user }) => {
                     Delete
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Live Map Modal */}
+        {selectedAreaForLiveMap && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-6xl shadow-lg rounded-md bg-white">
+              <div className="mt-3">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Live Map - {floodAreas.find(area => area.id === selectedAreaForLiveMap)?.name}
+                  </h3>
+                  <button
+                    onClick={() => setSelectedAreaForLiveMap(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                
+                <LiveMap 
+                  selectedFloodArea={selectedAreaForLiveMap}
+                  floodAreas={floodAreas}
+                  iotDevices={iotDevices}
+                />
               </div>
             </div>
           </div>
