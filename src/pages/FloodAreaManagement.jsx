@@ -35,6 +35,381 @@ import {
 } from 'lucide-react';
 import { floodAreas } from '../data/dummyData';
 
+// Interactive Map Component
+const InteractiveMap = ({ areas }) => {
+  const [selectedArea, setSelectedArea] = useState(null);
+  const [hoveredArea, setHoveredArea] = useState(null);
+  const [mapCenter, setMapCenter] = useState({ lat: 24.0, lng: 90.0 });
+  const [zoom, setZoom] = useState(7);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [mapOffset, setMapOffset] = useState({ x: 0, y: 0 });
+  const [isMouseDown, setIsMouseDown] = useState(false);
+
+  // Calculate map bounds based on areas
+  const getMapBounds = () => {
+    if (areas.length === 0) return { minLat: 23.5, maxLat: 25.0, minLng: 89.0, maxLng: 91.0 };
+    
+    const lats = areas.map(area => area.coordinates?.lat || 24.0);
+    const lngs = areas.map(area => area.coordinates?.lng || 90.0);
+    
+    return {
+      minLat: Math.min(...lats) - 0.5,
+      maxLat: Math.max(...lats) + 0.5,
+      minLng: Math.min(...lngs) - 0.5,
+      maxLng: Math.max(...lngs) + 0.5
+    };
+  };
+
+  const bounds = getMapBounds();
+
+  // Calculate marker size based on total families
+  const getMarkerSize = (families) => {
+    const maxFamilies = Math.max(...areas.map(area => area.totalFamilies));
+    const minSize = 20;
+    const maxSize = 60;
+    return minSize + ((families / maxFamilies) * (maxSize - minSize));
+  };
+
+  // Calculate marker color based on severity
+  const getMarkerColor = (severity) => {
+    switch (severity) {
+      case 'Critical': return '#dc2626'; // red-600
+      case 'High': return '#ea580c'; // orange-600
+      case 'Moderate': return '#d97706'; // amber-600
+      case 'Low': return '#059669'; // emerald-600
+      default: return '#6b7280'; // gray-500
+    }
+  };
+
+  // Calculate distance from center for visual representation
+  const getDistanceRadius = (distance) => {
+    return Math.min(distance * 2, 100); // Max 100px radius
+  };
+
+  // Handle mouse down for dragging
+  const handleMouseDown = (e) => {
+    setIsMouseDown(true);
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - mapOffset.x, y: e.clientY - mapOffset.y });
+    e.preventDefault();
+  };
+
+  // Handle mouse move for dragging
+  const handleMouseMove = (e) => {
+    if (isDragging && isMouseDown) {
+      const newOffset = {
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      };
+      setMapOffset(newOffset);
+    }
+  };
+
+  // Handle mouse up to stop dragging
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    setIsMouseDown(false);
+  };
+
+  // Handle wheel zoom
+  const handleWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -1 : 1;
+    const newZoom = Math.max(3, Math.min(10, zoom + delta * 0.5));
+    setZoom(newZoom);
+  };
+
+  // Handle touch events for mobile
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setIsMouseDown(true);
+      setIsDragging(true);
+      setDragStart({ x: touch.clientX - mapOffset.x, y: touch.clientY - mapOffset.y });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 1 && isDragging && isMouseDown) {
+      const touch = e.touches[0];
+      const newOffset = {
+        x: touch.clientX - dragStart.x,
+        y: touch.clientY - dragStart.y
+      };
+      setMapOffset(newOffset);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setIsMouseDown(false);
+  };
+
+  // Reset map view
+  const resetMapView = () => {
+    setMapOffset({ x: 0, y: 0 });
+    setZoom(7);
+    setMapCenter({ lat: 24.0, lng: 90.0 });
+  };
+
+  return (
+    <div 
+      className="relative w-full h-full bg-gradient-to-br from-blue-100 to-green-100 overflow-hidden cursor-grab select-none"
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
+      onWheel={handleWheel}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Map Background Pattern */}
+      <div 
+        className="absolute inset-0 opacity-20 transition-transform duration-100"
+        style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 20%, #3b82f6 2px, transparent 2px),
+            radial-gradient(circle at 80% 80%, #10b981 2px, transparent 2px),
+            radial-gradient(circle at 40% 60%, #f59e0b 1px, transparent 1px)
+          `,
+          backgroundSize: `${50 * zoom/7}px ${50 * zoom/7}px, ${30 * zoom/7}px ${30 * zoom/7}px, ${20 * zoom/7}px ${20 * zoom/7}px`,
+          transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${zoom/7})`
+        }} 
+      />
+
+      {/* Map Grid */}
+      <div 
+        className="absolute inset-0 opacity-10 transition-transform duration-100"
+        style={{
+          transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${zoom/7})`
+        }}
+      >
+        <svg className="w-full h-full">
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#374151" strokeWidth="1"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#grid)" />
+        </svg>
+      </div>
+
+      {/* Map Title */}
+      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-lg">
+        <h3 className="text-sm font-medium text-gray-900">Bangladesh Flood Areas</h3>
+        <p className="text-xs text-gray-600">{areas.length} areas mapped</p>
+      </div>
+
+      {/* Map Controls */}
+      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg p-2 shadow-lg">
+        <div className="flex flex-col space-y-2">
+          <button
+            onClick={() => setZoom(Math.min(zoom + 0.5, 10))}
+            className="w-8 h-8 bg-white rounded shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+            title="Zoom In"
+          >
+            <span className="text-lg font-bold">+</span>
+          </button>
+          <button
+            onClick={() => setZoom(Math.max(zoom - 0.5, 3))}
+            className="w-8 h-8 bg-white rounded shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+            title="Zoom Out"
+          >
+            <span className="text-lg font-bold">−</span>
+          </button>
+          <div className="border-t border-gray-200 my-1"></div>
+          <button
+            onClick={resetMapView}
+            className="w-8 h-8 bg-white rounded shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+            title="Reset View"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-2 text-center">
+          <span className="text-xs text-gray-600">{Math.round(zoom * 10) / 10}x</span>
+        </div>
+      </div>
+
+      {/* Map Legend */}
+      <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+        <h4 className="text-xs font-medium text-gray-900 mb-2">Legend</h4>
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-red-600 rounded-full mr-2"></div>
+            <span>Critical</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-orange-600 rounded-full mr-2"></div>
+            <span>High</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-amber-600 rounded-full mr-2"></div>
+            <span>Moderate</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-emerald-600 rounded-full mr-2"></div>
+            <span>Low</span>
+          </div>
+        </div>
+        <div className="mt-2 pt-2 border-t border-gray-200">
+          <p className="text-xs text-gray-600">Size = Families</p>
+          <p className="text-xs text-gray-600">Circle = Distance</p>
+          <p className="text-xs text-gray-500 mt-2">Drag to pan • Scroll to zoom</p>
+        </div>
+      </div>
+
+      {/* Flood Area Markers */}
+      <div 
+        className="relative w-full h-full transition-transform duration-100"
+        style={{
+          transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${zoom/7})`
+        }}
+      >
+        {areas.map((area) => {
+          if (!area.coordinates) return null;
+          
+          const markerSize = getMarkerSize(area.totalFamilies) * (zoom/7);
+          const markerColor = getMarkerColor(area.severity);
+          const distanceRadius = getDistanceRadius(area.distanceFromCenter) * (zoom/7);
+          
+          // Convert coordinates to pixel position (simplified)
+          const x = ((area.coordinates.lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 100;
+          const y = ((bounds.maxLat - area.coordinates.lat) / (bounds.maxLat - bounds.minLat)) * 100;
+          
+          return (
+            <div key={area.id} className="absolute transform -translate-x-1/2 -translate-y-1/2">
+              {/* Distance Circle */}
+              <div
+                className="absolute rounded-full border-2 border-dashed opacity-30"
+                style={{
+                  width: `${distanceRadius}px`,
+                  height: `${distanceRadius}px`,
+                  left: '50%',
+                  top: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  borderColor: markerColor
+                }}
+              />
+              
+              {/* Main Marker */}
+              <div
+                className="relative cursor-pointer transition-all duration-200 hover:scale-110"
+                style={{
+                  left: `${x}%`,
+                  top: `${y}%`,
+                  width: `${markerSize}px`,
+                  height: `${markerSize}px`
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedArea(selectedArea?.id === area.id ? null : area);
+                }}
+                onMouseEnter={() => setHoveredArea(area)}
+                onMouseLeave={() => setHoveredArea(null)}
+              >
+                {/* Marker Shadow */}
+                <div
+                  className="absolute rounded-full opacity-20"
+                  style={{
+                    width: `${markerSize}px`,
+                    height: `${markerSize}px`,
+                    backgroundColor: '#000',
+                    transform: 'translate(2px, 2px)'
+                  }}
+                />
+                
+                {/* Marker Body */}
+                <div
+                  className="absolute rounded-full border-2 border-white shadow-lg flex items-center justify-center"
+                  style={{
+                    width: `${markerSize}px`,
+                    height: `${markerSize}px`,
+                    backgroundColor: markerColor
+                  }}
+                >
+                  <span className="text-white font-bold" style={{ fontSize: `${Math.max(8, markerSize/6)}px` }}>
+                    {area.totalFamilies > 1000 ? '1K+' : area.totalFamilies}
+                  </span>
+                </div>
+                
+                {/* Marker Pin */}
+                <div
+                  className="absolute"
+                  style={{
+                    width: '0',
+                    height: '0',
+                    left: '50%',
+                    top: '100%',
+                    transform: 'translateX(-50%)',
+                    borderLeft: `${markerSize/4}px solid transparent`,
+                    borderRight: `${markerSize/4}px solid transparent`,
+                    borderTop: `${markerSize/3}px solid ${markerColor}`
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Area Details Popup */}
+      {selectedArea && (
+        <div className="absolute bg-white rounded-lg shadow-xl border border-gray-200 p-4 max-w-sm z-20"
+             style={{
+               left: `${((selectedArea.coordinates.lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 100}%`,
+               top: `${((bounds.maxLat - selectedArea.coordinates.lat) / (bounds.maxLat - bounds.minLat)) * 100}%`,
+               transform: `translate(-50%, -120%) translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${zoom/7})`
+             }}>
+          <div className="flex justify-between items-start mb-2">
+            <h4 className="font-medium text-gray-900">{selectedArea.name}</h4>
+            <button
+              onClick={() => setSelectedArea(null)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-1 text-sm text-gray-600">
+            <div><span className="font-medium">District:</span> {selectedArea.district}</div>
+            <div><span className="font-medium">Families:</span> {selectedArea.totalFamilies.toLocaleString()}</div>
+            <div><span className="font-medium">Villages:</span> {selectedArea.totalVillages}</div>
+            <div><span className="font-medium">Distance:</span> {selectedArea.distanceFromCenter}km</div>
+            <div><span className="font-medium">Water Level:</span> {selectedArea.waterLevel}</div>
+            <div className="flex items-center mt-2">
+              <span className="font-medium mr-2">Severity:</span>
+              <span className={`px-2 py-1 rounded-full text-xs ${
+                selectedArea.severity === 'Critical' ? 'bg-red-100 text-red-700' :
+                selectedArea.severity === 'High' ? 'bg-orange-100 text-orange-700' :
+                selectedArea.severity === 'Moderate' ? 'bg-yellow-100 text-yellow-700' :
+                'bg-green-100 text-green-700'
+              }`}>
+                {selectedArea.severity}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hover Tooltip */}
+      {hoveredArea && !selectedArea && (
+        <div className="absolute bg-gray-900 text-white text-xs rounded px-2 py-1 z-20 pointer-events-none"
+             style={{
+               left: `${((hoveredArea.coordinates.lng - bounds.minLng) / (bounds.maxLng - bounds.minLng)) * 100}%`,
+               top: `${((bounds.maxLat - hoveredArea.coordinates.lat) / (bounds.maxLat - bounds.minLat)) * 100}%`,
+               transform: `translate(-50%, -120%) translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${zoom/7})`
+             }}>
+          {hoveredArea.name}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const FloodAreaManagement = ({ user }) => {
   const [areas, setAreas] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -1769,6 +2144,69 @@ const FloodAreaManagement = ({ user }) => {
                           No transportation resources added yet
                         </div>
                       )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Map View Modal */}
+        {showMapModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-4 mx-auto p-5 border w-11/12 max-w-7xl shadow-lg rounded-md bg-white h-[95vh]">
+              <div className="mt-3 h-full flex flex-col">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">Flood Areas Map View</h3>
+                  <button
+                    onClick={() => setShowMapModal(false)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                
+                <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 h-full">
+                  {/* Map Container */}
+                  <div className="lg:col-span-3 bg-gray-100 rounded-lg relative overflow-hidden">
+                    <InteractiveMap areas={filteredAndSortedAreas} />
+                  </div>
+                  
+                  {/* Priority List Sidebar */}
+                  <div className="lg:col-span-1 bg-white border border-gray-200 rounded-lg p-4 overflow-y-auto">
+                    <h4 className="text-md font-medium text-gray-900 mb-4">Priority Areas</h4>
+                    <div className="space-y-3">
+                      {filteredAndSortedAreas
+                        .sort((a, b) => {
+                          const priorityOrder = { 'Critical': 4, 'High': 3, 'Moderate': 2, 'Low': 1 };
+                          return (priorityOrder[b.severity] || 0) - (priorityOrder[a.severity] || 0);
+                        })
+                        .map((area, index) => (
+                          <div key={area.id} className="bg-gray-50 rounded p-3 border-l-4 border-l-primary-500">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <h5 className="font-medium text-gray-900 text-sm">{area.name}</h5>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  <div>Families: {area.totalFamilies.toLocaleString()}</div>
+                                  <div>Distance: {area.distanceFromCenter}km</div>
+                                  <div>Villages: {area.totalVillages}</div>
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end">
+                                <span className="text-xs font-bold text-primary-600">#{index + 1}</span>
+                                <span className={`text-xs px-2 py-1 rounded-full mt-1 ${
+                                  area.severity === 'Critical' ? 'bg-red-100 text-red-700' :
+                                  area.severity === 'High' ? 'bg-orange-100 text-orange-700' :
+                                  area.severity === 'Moderate' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-green-100 text-green-700'
+                                }`}>
+                                  {area.severity}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                     </div>
                   </div>
                 </div>
