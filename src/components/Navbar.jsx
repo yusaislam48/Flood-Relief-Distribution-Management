@@ -10,7 +10,8 @@ import {
   Menu, 
   X,
   Shield,
-  Users
+  Users,
+  BarChart3
 } from 'lucide-react';
 
 const Navbar = ({ user, onLogout }) => {
@@ -62,6 +63,17 @@ const Navbar = ({ user, onLogout }) => {
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
+              <Link
+                to="/analytics"
+                className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                  isActive('/analytics')
+                    ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Public Analytics
+              </Link>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -141,6 +153,20 @@ const Navbar = ({ user, onLogout }) => {
                 <p className="text-xs text-gray-500 capitalize">{user?.role} - {user?.organization}</p>
               </div>
             </div>
+
+            {/* Public Analytics Link */}
+            <Link
+              to="/analytics"
+              onClick={() => setIsMenuOpen(false)}
+              className={`flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                isActive('/analytics')
+                  ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <BarChart3 className="h-5 w-5 mr-3" />
+              Public Analytics
+            </Link>
 
             {/* Navigation Items */}
             {navItems.map((item) => {

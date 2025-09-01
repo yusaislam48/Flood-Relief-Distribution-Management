@@ -484,7 +484,7 @@ const FloodAreaManagement = ({ user }) => {
   const filteredAndSortedAreas = areas
     .filter(area => {
       const matchesSearch = area.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        area.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    area.district.toLowerCase().includes(searchTerm.toLowerCase()) ||
         area.divison.toLowerCase().includes(searchTerm.toLowerCase()) ||
         area.description?.toLowerCase().includes(searchTerm.toLowerCase());
       
@@ -1092,13 +1092,13 @@ const FloodAreaManagement = ({ user }) => {
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
               </button>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="btn-primary flex items-center"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Flood Area
-              </button>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="btn-primary flex items-center"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Flood Area
+            </button>
             </div>
           </div>
         </div>
@@ -1159,17 +1159,17 @@ const FloodAreaManagement = ({ user }) => {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search Bar */}
             <div className="flex-1 relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search flood areas by name, district, division, or description..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10"
-              />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
             </div>
+            <input
+              type="text"
+                placeholder="Search flood areas by name, district, division, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-field pl-10"
+            />
+          </div>
             
             {/* Filter and Sort Controls */}
             <div className="flex flex-wrap gap-2">
@@ -1198,8 +1198,8 @@ const FloodAreaManagement = ({ user }) => {
               >
                 {sortOrder === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
-            </div>
           </div>
+        </div>
           
           {/* Advanced Filters */}
           {showFilters && (
@@ -1353,7 +1353,7 @@ const FloodAreaManagement = ({ user }) => {
                 </div>
               </div>
               
-              <ul className="divide-y divide-gray-200">
+            <ul className="divide-y divide-gray-200">
                 {filteredAndSortedAreas.map((area) => (
                 <li key={area.id} className="px-6 py-4">
                   <div className="flex items-center justify-between">
@@ -1364,38 +1364,38 @@ const FloodAreaManagement = ({ user }) => {
                         onChange={(e) => handleAreaSelection(area.id, e.target.checked)}
                         className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded mr-4"
                       />
-                      <div className="flex-1">
-                        <div className="flex justify-between">
-                          <h3 className="text-lg font-medium text-gray-900">{area.name}</h3>
-                          <div className="flex space-x-2">
-                            {getSeverityBadge(area.severity)}
-                            {getStatusBadge(area.status)}
-                          </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between">
+                        <h3 className="text-lg font-medium text-gray-900">{area.name}</h3>
+                        <div className="flex space-x-2">
+                          {getSeverityBadge(area.severity)}
+                          {getStatusBadge(area.status)}
                         </div>
-                        <div className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium">District:</span> {area.district}, {area.divison}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium">Villages:</span> {area.totalVillages}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium">Families:</span> {area.totalFamilies.toLocaleString()}
-                          </div>
+                      </div>
+                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">District:</span> {area.district}, {area.divison}
                         </div>
-                        <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium">Water Level:</span> {getWaterLevelBadge(area.waterLevel)}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            <span className="font-medium">Last Updated:</span> {new Date(area.lastUpdated).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">Villages:</span> {area.totalVillages}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">Families:</span> {area.totalFamilies.toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">Water Level:</span> {getWaterLevelBadge(area.waterLevel)}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          <span className="font-medium">Last Updated:</span> {new Date(area.lastUpdated).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
                         </div>
                         {area.description && (
                           <div className="mt-2 text-sm text-gray-600">

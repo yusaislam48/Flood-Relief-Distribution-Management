@@ -8,6 +8,7 @@ import RegistrationPage from './pages/RegistrationPage';
 import FloodAreaManagement from './pages/FloodAreaManagement';
 import RequestManagement from './pages/RequestManagement';
 import TrackingMap from './pages/TrackingMap';
+import PublicAnalytics from './pages/PublicAnalytics';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -58,6 +59,10 @@ function App() {
       <main className={user ? 'pt-16' : ''}>
         <Routes>
           {/* Public Routes */}
+          <Route 
+            path="/analytics" 
+            element={<PublicAnalytics />} 
+          />
           <Route 
             path="/login" 
             element={!user ? <LoginPage onLogin={handleLogin} /> : <Navigate to="/dashboard" />} 
@@ -111,7 +116,7 @@ function App() {
           {/* Default redirect */}
           <Route 
             path="/" 
-            element={<Navigate to={user ? "/dashboard" : "/login"} />} 
+            element={<Navigate to="/analytics" />} 
           />
           
           {/* 404 */}
